@@ -27,6 +27,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+AUTH_USER_MODEL = 'users.Profile'
+
 
 # Application definition
 
@@ -41,6 +43,7 @@ INSTALLED_APPS = [
     'frontend',
 
     'catalog.apps.CatalogConfig',
+    'users.apps.UsersConfig',
 
 ]
 
