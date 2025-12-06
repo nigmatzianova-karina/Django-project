@@ -25,7 +25,7 @@ class Order(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="orders", null=True,
                              blank=True, verbose_name="Пользователь")
-    order_number = models.CharField(unique=True)
+    order_number = models.CharField(max_length=20, unique=True, verbose_name='Номер заказа')
     full_name = models.CharField(max_length=255, verbose_name="ФИО")
     email = models.EmailField(verbose_name="Email")
     phone = models.CharField(max_length=20, verbose_name="Телефон")
@@ -33,19 +33,19 @@ class Order(models.Model):
     delivery_type = models.CharField(max_length=20, choices=DELIVERY_TYPES, verbose_name="Тип доставки")
     city = models.CharField(max_length=55, verbose_name="Город доставки")
     address = models.CharField(max_length=255, verbose_name="Адрес доставки")
-    delivery_cost = models.DecimalField(default=0)
+    delivery_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Стоимость доставки")
     comment = models.TextField(blank=True, verbose_name="Комментарий к заказу")
 
-    status = models.CharField(choices=STATUS_CHOICES, default='new')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', verbose_name='Статус заказа')
 
     payment_type = models.CharField(max_length=35, choices=PAYMENT_TYPES, verbose_name="Способ оплаты")
-    payment_status = models.CharField(blank=True)
-    payment_error = models.TextField(blank=True)
+    payment_status = models.CharField(max_length=50, blank=True, verbose_name='Статус оплаты')
+    payment_error = models.TextField(blank=True, verbose_name='Текст ошибки оплаты')
     total_cost = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Общая стоимость")
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    deleted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
+    deleted_at = models.DateTimeField(null=True, blank=True, verbose_name='Дата удаления')
 
     class Meta:
         verbose_name = 'Заказ'
