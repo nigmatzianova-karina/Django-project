@@ -47,7 +47,6 @@ class Payment(models.Model):
         """Обработка платежа по логике ТЗ"""
         clean_number = ''.join(filter(str.isdigit, self.card_number))
 
-        # Проверка 2: четный и не заканчивается на 0
         last_digit = int(clean_number[-1]) if clean_number else 0
         is_even = int(clean_number) % 2 == 0 if clean_number else False
 
@@ -72,14 +71,4 @@ class Payment(models.Model):
     def generate_random_account(self):
         """Генерация случайного счета по ТЗ"""
         import random
-
-        number = str(random.randint(10000000, 99999999))
-
-        if int(number) % 2 != 0:
-            number = str(int(number) + 1)
-
-        if number.endswith('0'):
-            number = number[:-1] + '2'
-
-        return number
-
+        return str(random.randint(1000000, 9999999)) + str(random.choice([2, 4, 6, 8]))
