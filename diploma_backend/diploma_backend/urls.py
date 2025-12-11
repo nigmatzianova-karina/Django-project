@@ -21,5 +21,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("", include("frontend.urls")),
     path('catalog/', include('catalog.urls')),
+    # path('profile/', include("users.urls")),
 
 ]
