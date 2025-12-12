@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Avg
 
 
 class Category(models.Model):
@@ -57,6 +58,19 @@ class Product(models.Model):
     def date(self):
         """Возвращает дату в формате как в API"""
         return self.created_at.strftime('%a %b %d %Y %H:%M:%S GMT%z')
+
+    def update_rating(self):
+        reviews = self.reviews.all()
+
+        if reviews.exists():
+            avg_rating = reviews.aggregate(avg=Avg("rete"))["avg"]
+            self.rating = round(avg_rating, 2)
+        else:
+            self.rating = 0.00
+
+        self.save(update_fields=["rating"])
+        return self.rating
+
 
     class Meta:
         verbose_name = 'Товар'
