@@ -6,7 +6,7 @@ from django.db.models import Avg
 class Category(models.Model):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
     title = models.CharField(max_length=255)
-    image = models.ImageField(upload_to='categories/', blank=True, null=True)
+    image = models.ImageField(upload_to='', blank=True, null=True, default='/static/categories/placeholder.jpg')
     is_active = models.BooleanField(default=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
     is_featured = models.IntegerField(default=0)
@@ -63,7 +63,7 @@ class Product(models.Model):
         reviews = self.reviews.all()
 
         if reviews.exists():
-            avg_rating = reviews.aggregate(avg=Avg("rete"))["avg"]
+            avg_rating = reviews.aggregate(avg=Avg("rate"))["avg"]
             self.rating = round(avg_rating, 2)
         else:
             self.rating = 0.00
@@ -80,7 +80,7 @@ class Product(models.Model):
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='products/')
+    image = models.ImageField(upload_to='', default='/static/products/placeholder.jpg')
     alt = models.CharField(max_length=255, blank=True)
     is_main = models.BooleanField(default=False)
 
