@@ -4,62 +4,30 @@ from catalog.models import Product, Tag, ProductImage, Specification, Review, Ca
 
 class ImageSerializer(serializers.ModelSerializer):
     src = serializers.SerializerMethodField()
+    alt = serializers.CharField()
 
     class Meta:
         model = ProductImage
         fields = ['src', 'alt']
 
     def get_src(self, obj):
-        src = "/static/products/placeholder.jpg"
-        alt = obj.title or "No image"
-
         if obj.image:
-            if hasattr(obj.image, 'url'):
-                url = obj.image.url
-                if '/products/' in url:
-                    filename = url.split('/products/')[-1]
-                    src = f"/static/products/{filename}"
-                else:
-                    filename = url.split('/')[-1]
-                    src = f"/static/products/{filename}"
-
-            elif hasattr(obj.image, 'name'):
-                file_name = obj.image.name
-                if '/products/' in file_name:
-                    filename = file_name.split('/products/')[-1]
-                    src = f"/static/products/{filename}"
-                else:
-                    filename = file_name.split('/')[-1]
-                    src = f"/static/products/{filename}"
-
-            elif isinstance(obj.image, str):
-                if obj.image.startswith('/'):
-                    src = obj.image
-                elif obj.image.startswith('static/'):
-                    src = '/' + obj.image
-                else:
-                    src = f"/static/products/{obj.image}"
-
-        if not src.startswith('/'):
-            src = '/' + src
-
-        return {
-            "src": src,
-            "alt": alt
-        }
+            filename = obj.image.name
+            return f"/static/{filename}"
+        return "/static/products/placeholder.jpg"
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    author = serializers.CharField(source='author_name')
     rate = serializers.IntegerField()
     date = serializers.SerializerMethodField()
+    email = serializers.EmailField()
+    author = serializers.CharField()
 
     class Meta:
         model = Review
         fields = ['author', 'email', 'text', 'rate', 'date']
 
     def get_date(self, obj):
-        """Форматирование даты как в API"""
         return obj.created_at.strftime('%Y-%m-%d %H:%M')
 
 
@@ -98,20 +66,18 @@ class ProductShortSerializer(serializers.ModelSerializer):
 class ProductFullSerializer(serializers.ModelSerializer):
     date = serializers.CharField()
     freeDelivery = serializers.BooleanField(source="free_delivery")
-    reviews = ReviewSerializer(source="reviews.all")
+    reviews = ReviewSerializer(many=True)
     images = serializers.SerializerMethodField()
-    tags = serializers.SerializerMethodField()
+    tags = TagSerializer(many=True)
+    specifications = SpecificationSerializer(many=True)
+    fullDescription = serializers.CharField(source="full_description")
 
     class Meta:
         model = Product
         fields = [
-            "id", "category", "price", "count", "date", "title", "description", "freeDelivery", "images", "tags",
-            "reviews", "rating"
+            "id", "category", "price", "count", "date", "title", "description", "fullDescription", "freeDelivery",
+            "images", "tags", "reviews", "specifications", "rating"
         ]
-
-    def get_tags(self, obj):
-        """В ProductFull tags - массив ID тегов (не объектов!)"""
-        return [tag.id for tag in obj.tags.all()]
 
     def get_images(self, obj):
         images = obj.images.all()
@@ -127,42 +93,15 @@ class CatalogItemSerializer(serializers.ModelSerializer):
         fields = ["id", "title", "image", "subcategories"]
 
     def get_image(self, obj):
-        src = "/static/categories/placeholder.jpg"
-        alt = obj.title or "No image"
-
         if obj.image:
-            if hasattr(obj.image, 'url'):
-                url = obj.image.url
-                if '/categories/' in url:
-                    filename = url.split('/categories/')[-1]
-                    src = f"/static/categories/{filename}"
-                else:
-                    filename = url.split('/')[-1]
-                    src = f"/static/categories/{filename}"
-
-            elif hasattr(obj.image, 'name'):
-                file_name = obj.image.name
-                if '/categories/' in file_name:
-                    filename = file_name.split('/categories/')[-1]
-                    src = f"/static/categories/{filename}"
-                else:
-                    filename = file_name.split('/')[-1]
-                    src = f"/static/categories/{filename}"
-
-            elif isinstance(obj.image, str):
-                if obj.image.startswith('/'):
-                    src = obj.image
-                elif obj.image.startswith('static/'):
-                    src = '/' + obj.image
-                else:
-                    src = f"/static/categories/{obj.image}"
-
-        if not src.startswith('/'):
-            src = '/' + src
-
+            filename = obj.image.name
+            return {
+                "src": f"/{filename}",
+                "alt": obj.title
+            }
         return {
-            "src": src,
-            "alt": alt
+            "src": "/static/categories/placeholder.jpg",
+            "alt": obj.title
         }
 
     def get_subcategories(self, obj):

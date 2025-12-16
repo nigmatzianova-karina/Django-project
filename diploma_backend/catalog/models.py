@@ -6,7 +6,7 @@ from django.db.models import Avg
 class Category(models.Model):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
     title = models.CharField(max_length=255)
-    image = models.ImageField(upload_to='', blank=True, null=True, default='/static/categories/placeholder.jpg')
+    image = models.ImageField(upload_to='', blank=True, null=True, default='categories/placeholder.jpg')
     is_active = models.BooleanField(default=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
     is_featured = models.IntegerField(default=0)
@@ -80,7 +80,7 @@ class Product(models.Model):
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='', default='/static/products/placeholder.jpg')
+    image = models.ImageField(upload_to='products/', blank=True, null=True, default='/products/placeholder.jpg')
     alt = models.CharField(max_length=255, blank=True)
     is_main = models.BooleanField(default=False)
 
@@ -104,7 +104,7 @@ class Review(models.Model):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name='reviews',
                                null=True, blank=True)
 
-    author_name = models.CharField(max_length=255)
+    author_name = models.CharField(max_length=255, blank=True)
     text = models.TextField()
     email = models.EmailField()
     rate = models.PositiveSmallIntegerField(choices=[(i, i) for i in range(1, 6)])
