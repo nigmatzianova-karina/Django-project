@@ -22,33 +22,25 @@ def categories_view(request):
 @api_view(["GET"])
 def catalog_view(request):
     products = Product.objects.filter(is_active=True)
-    print("all products")
-    print(products)
 
     if category_id := request.GET.get("category"):
         products = products.filter(category_id=category_id)
-        print("filter by category")
-        print(products)
 
     if name_filter := request.GET.get("filter[name]"):
         products = products.filter(title__icontains=name_filter)
-        print("filter by name")
-        print(products)
 
     if min_price := request.GET.get("filter[minPrice]"):
         products = products.filter(price__gte=Decimal(min_price))
-        print("filter by min price")
-        print(products)
 
     if max_price := request.GET.get("filter[maxPrice]"):
         products = products.filter(price__lte=Decimal(max_price))
-        print("filter by max price")
-        print(products)
 
     if free_delivery := request.GET.get("filter[freeDelivery]"):
         products = products.filter(free_delivery=(free_delivery.lower() == "true"))
-        print("filter by free delivery")
-        print(products)
+
+    if tags_param := request.GET.getlist('tags[]'):
+        tag_ids = [int(tag_id) for tag_id in tags_param]
+        products = products.filter(tags__id__in=tag_ids).distinct()
 
     sort_type = request.GET.get("sort", "rating")
     order = request.GET.get("order", "desc")
@@ -68,29 +60,20 @@ def catalog_view(request):
         sort_field = f"-{sort_field}"
 
     products = products.order_by(sort_field)
-    print(f"ordering by {sort_field}")
-    print(products)
 
     paginator = PageNumberPagination()
     paginator.page_size = int(request.GET.get("limit", 20))
     paginated_products = paginator.paginate_queryset(products, request)
 
     serializer = ProductShortSerializer(paginated_products, many=True)
-    print("pass serializer")
-    print("\npaginated_products\n")
-    print(paginated_products)
+
     response_data = {
         "items": serializer.data,
         "currentPage": paginator.page.number,
         "lastPage": paginator.page.paginator.num_pages
     }
-
-    print("=== RESPONSE DATA ===")
-    import json
-    print(json.dumps(response_data, indent=2, default=str))
-    print("=====================")
-
     return Response(response_data)
+
 
 @api_view(["GET"])
 def popular_products_view(request):
@@ -129,8 +112,12 @@ def sales_view(request):
     paginated_sales = paginator.paginate_queryset(sales, request)
 
     serializer = SaleItemSerializer(paginated_sales, many=True)
-
-    return paginator.get_paginated_response(serializer.data)
+    response_data = {
+        "items": serializer.data,
+        "currentPage": paginator.page.number,
+        "lastPage": paginator.page.paginator.num_pages
+    }
+    return Response(response_data)
 
 
 @api_view(["GET"])
@@ -156,6 +143,7 @@ def tags_view(request):
 def products_by_id_view(request, id):
     try:
         product = Product.objects.get(id=id, is_active=True)
+        print(product)
     except Product.DoesNotExist:
         return Response({"error": "Does not exist"}, status=404)
 
@@ -166,8 +154,10 @@ def products_by_id_view(request, id):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def products_reviews_view(request, id):
+    print("START")
     try:
         product = Product.objects.get(id=id, is_active=True)
+        print(product)
     except Product.DoesNotExist:
         return Response({"error": "Does not exist"}, status=404)
 
@@ -177,8 +167,10 @@ def products_reviews_view(request, id):
     review = Review.objects.create(
         product=product,
         author=request.user,
+        author_name=request.user.get_full_name() or request.user.username,
+        email=request.data.get("email", request.user.email),
         text=request.data.get("text"),
-        rate=request.data.get("rate")
+        rate=request.data.get("rate"),
     )
 
     product.update_rating()
