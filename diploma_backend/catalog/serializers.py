@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from catalog.models import Product, Tag, ProductImage, Specification, Review, Category, Sale
+from .models import Product, Tag, ProductImage, Specification, Review, Category, Sale
 
 
 class ImageSerializer(serializers.ModelSerializer):

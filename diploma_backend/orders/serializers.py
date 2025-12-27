@@ -22,7 +22,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class OrderProductSerializer(serializers.ModelSerializer):
-    category = serializers.IntegerField(source="product.category__id")
+    category = serializers.IntegerField(source="product.category.id")
     price = serializers.DecimalField(source="product.price", max_digits=10, decimal_places=2)
     count = serializers.IntegerField(source="product.count")
     date = serializers.DateTimeField(source="order.created_at", format='%a %b %d %Y %H:%M:%S GMT%z')

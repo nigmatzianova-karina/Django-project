@@ -4,8 +4,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from catalog.models import Category, Product, Sale, Tag, Review
-from catalog.serializers import (CatalogItemSerializer, ProductShortSerializer, SaleItemSerializer, TagSerializer,
+from .models import Category, Product, Sale, Tag, Review
+from .serializers import (CatalogItemSerializer, ProductShortSerializer, SaleItemSerializer, TagSerializer,
                                  ProductFullSerializer, ReviewSerializer)
 
 
