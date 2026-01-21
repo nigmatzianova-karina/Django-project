@@ -23,8 +23,8 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class OrderProductSerializer(serializers.ModelSerializer):
     category = serializers.IntegerField(source="product.category.id")
-    price = serializers.DecimalField(source="product.price", max_digits=10, decimal_places=2)
-    count = serializers.IntegerField(source="product.count")
+    price = serializers.FloatField(source="product.price")
+    count = serializers.IntegerField(source="quantity")
     date = serializers.DateTimeField(source="order.created_at", format='%a %b %d %Y %H:%M:%S GMT%z')
     title = serializers.CharField(source="product.title")
     description = serializers.CharField(source="product.description")
@@ -41,9 +41,9 @@ class OrderProductSerializer(serializers.ModelSerializer):
                   "tags", "reviews", "rating"]
 
     def get_images(self, obj):
-        images = obj.products.images.all()
+        images = obj.product.images.all()
         return ImageSerializer(images, many=True).data
 
     def get_tags(self, obj):
-        tags = obj.products.tags.all()
+        tags = obj.product.tags.all()
         return TagSerializer(tags, many=True).data
