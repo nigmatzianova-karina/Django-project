@@ -2,37 +2,55 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 import random
+
+from cart.models import CartItem
 from catalog.models import Product
 from orders.models import Order, OrderItem
 from orders.serializers import OrderSerializer
 
 
 @api_view(["GET", "POST"])
-@permission_classes([IsAuthenticated])
 def orders_view(request):
+    if not request.session.session_key:
+        request.session.create()
+
+    session_id = request.session.session_key
+
     if request.method == "GET":
-        orders = Order.objects.filter(
-            user=request.user,
-        ).order_by("-created_at")
+        if request.user.is_authenticated:
+            orders = Order.objects.filter(
+                user=request.user,
+            ).order_by("-created_at")
+        else:
+            orders = Order.objects.filter(
+                session_id=session_id,
+            ).order_by("-created_at")
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
+
     elif request.method == "POST":
         order_number = random.randint(111111111, 999999999)
         order = Order.objects.create(
-            user=request.user,
+            user=request.user if request.user.is_authenticated else None,
+            session_id=session_id if not request.user.is_authenticated else None,
             total_cost=0,
             order_number=order_number,
         )
+
         for item in request.data:
             product = Product.objects.get(
                 id=item["id"]
             )
-            OrderItem.objects.create(
+            cart_item = CartItem.objects.filter(
+                product=product,
+            ).first()
+            order_item = OrderItem.objects.create(
                 order=order,
                 product=product,
-                quantity=item["count"],
-                price=item["price"]
+                quantity=cart_item.quantity,
+                price=cart_item.total_price
             )
+            order_item.save()
         return Response({"orderId": int(order.id)})
 
     return Response(status=400)
@@ -63,13 +81,8 @@ def orders_by_id_view(request, id):
         order.city = request.data.get("city")
         order.address = request.data.get("address")
 
-        products = request.data.get("products", [])
+        products = OrderItem.objects.filter(order=order)
         for product in products:
-            item, _ = OrderItem.objects.get_or_create(
-                order=order,
-                product=product,
-                quantity=product.count,
-                price=product.price
-            )
+            print(product)
         return Response(status=200)
     return Response(status=400)

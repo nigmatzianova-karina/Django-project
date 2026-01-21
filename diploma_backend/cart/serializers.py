@@ -32,19 +32,13 @@ class CartItemSerializer(serializers.ModelSerializer):
 
 
 class CartSerializer(serializers.ListSerializer):
-    """
-    ListSerializer для работы со списком items
-    """
-
     child = CartItemSerializer()
 
     def to_representation(self, cart):
-        # cart - это объект Cart, а не список
         items = cart.items.all()
         return super().to_representation(items)
 
     @classmethod
     def many_init(cls, *args, **kwargs):
-        # Переопределяем, чтобы принимать объект Cart
         return cls(*args, **kwargs)
 

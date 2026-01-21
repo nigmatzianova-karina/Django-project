@@ -25,6 +25,7 @@ class Order(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="orders", null=True,
                              blank=True, verbose_name="Пользователь")
+    session_id = models.CharField(max_length=255, null=True, blank=True)
     order_number = models.CharField(max_length=20, unique=True, verbose_name='Номер заказа')
     full_name = models.CharField(max_length=255, verbose_name="ФИО")
     email = models.EmailField(verbose_name="Email")
