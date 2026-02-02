@@ -1,96 +1,83 @@
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from decimal import Decimal
+
+from django.db import transaction
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 import random
-
-from cart.models import CartItem
 from catalog.models import Product
-from orders.models import Order, OrderItem
+from orders.models import Order, OrderItem, DeliverySettings
 from orders.serializers import OrderSerializer
 
 
 @api_view(["GET", "POST"])
 def orders_view(request):
-    if not request.session.session_key:
-        request.session.create()
-
-    session_id = request.session.session_key
+    """
+    Handles order history retrieval and initial order creation from cart items.
+    Generates a unique order number and calculates preliminary totals.
+    """
+    session_id = request.session.session_key or request.session.create()
 
     if request.method == "GET":
-        if request.user.is_authenticated:
-            orders = Order.objects.filter(
-                user=request.user,
-            ).order_by("-created_at")
-        else:
-            orders = Order.objects.filter(
-                session_id=session_id,
-            ).order_by("-created_at")
-        serializer = OrderSerializer(orders, many=True)
-        return Response(serializer.data)
+        orders = Order.objects.filter(
+            user=request.user if request.user.is_authenticated else None,
+            session_id=None if request.user.is_authenticated else session_id
+        ).prefetch_related(
+            'items__product__images', 'items__product__tags'
+        ).order_by("-created_at")
+
+        return Response(OrderSerializer(orders, many=True).data)
 
     elif request.method == "POST":
-        order_number = random.randint(111111111, 999999999)
-        total_cost = 0
-        order = Order.objects.create(
-            user=request.user if request.user.is_authenticated else None,
-            session_id=session_id if not request.user.is_authenticated else None,
-            total_cost=total_cost,
-            order_number=order_number,
-        )
-
-        for item in request.data:
-            product = Product.objects.get(
-                id=item["id"]
+        with transaction.atomic():
+            order = Order.objects.create(
+                user=request.user if request.user.is_authenticated else None,
+                session_id=session_id if not request.user.is_authenticated else None,
+                total_cost=0,
+                order_number=random.randint(100000, 999999),
             )
-            cart_item = CartItem.objects.filter(
-                product=product,
-            ).first()
-            order_item = OrderItem.objects.create(
-                order=order,
-                product=product,
-                quantity=cart_item.quantity,
-                price=cart_item.total_price
-            )
-            order_item.save()
-            total_cost += order_item.price
 
-        order.total_cost = total_cost
+            total_cost = 0
+            for item_data in request.data:
+                product = Product.objects.get(id=item_data["id"])
 
-        order.save()
-        return Response({"orderId": int(order.id)})
+                order_item = OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    quantity=item_data.get("count", 1),
+                    price=product.price
+                )
+                total_cost += order_item.price * order_item.quantity
+
+            order.total_cost = total_cost
+            order.save()
+
+        return Response({"orderId": order.id})
 
     return Response(status=400)
 
 
 @api_view(["GET", "POST"])
 def orders_by_id_view(request, id):
-    print("start")
+    """
+    Manages detailed order information.
+    GET: Returns full order details including nested products.
+    POST: Finalizes order details (address, delivery) and applies delivery costs.
+    """
+    delivery_cfg = DeliverySettings.load()
 
-    if not request.session.session_key:
-        request.session.create()
-
-    session_id = request.session.session_key
+    try:
+        if request.user.is_authenticated:
+            order = Order.objects.get(user=request.user, id=id)
+        else:
+            order = Order.objects.get(session_id=request.session.session_key, id=id)
+    except Order.DoesNotExist:
+        return Response(status=404)
 
     if request.method == "GET":
-        if request.user.is_authenticated:
-            order = Order.objects.get(
-                user=request.user,
-                id=id
-            )
-        else:
-            order = Order.objects.get(
-                session_id=session_id,
-                id=id
-            )
+        return Response(OrderSerializer(order).data)
 
-        serializer = OrderSerializer(order)
-        return Response(serializer.data)
     elif request.method == "POST":
-        order = Order.objects.get(
-            user=request.user,
-            id=id
-        )
-        order.full_name = request.data.get("fullName")
+        order.full_name = request.data.get("fullName", order.full_name)
         order.email = request.data.get("email")
         order.phone = request.data.get("phone")
         order.delivery_type = request.data.get("deliveryType")
@@ -100,29 +87,23 @@ def orders_by_id_view(request, id):
         order.city = request.data.get("city")
         order.address = request.data.get("address")
 
-        print(order.delivery_type)
+        delivery_cfg = DeliverySettings.load()
+
+        current_total = Decimal(str(request.data.get("totalCost", order.total_cost)))
 
         if order.delivery_type == "express":
-            print("express")
-            order.delivery_cost = 500
-            order.total_cost = float(order.total_cost) + order.delivery_cost
-        elif order.delivery_type == "ordinary" and float(order.total_cost) < 2000:
-            print("ordinary < 2000")
-            order.delivery_cost = 200
-            order.total_cost = float(order.total_cost) + order.delivery_cost
+            order.delivery_cost = delivery_cfg.express_delivery_surcharge
+        elif current_total < delivery_cfg.free_delivery_threshold:
+            order.delivery_cost = delivery_cfg.standard_delivery_cost
         else:
-            print("ordinary > 2000")
-            order.delivery_cost = 0
+            order.delivery_cost = Decimal("0.00")
 
+        order.total_cost = current_total + order.delivery_cost
         order.save()
 
-        products = OrderItem.objects.filter(order=order)
-        for product in products:
-            print(product)
         serializer = OrderSerializer(order)
         data = serializer.data
         data["orderId"] = order.id
-        print(data)
-        return Response(data, status=200)
+        return Response(data)
 
     return Response(status=400)

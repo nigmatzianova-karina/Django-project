@@ -1,10 +1,14 @@
 from django.conf import settings
 from django.db import models
-
 from catalog.models import Product
 
 
 class Order(models.Model):
+    """
+    Represents a customer's purchase request.
+    Stores contact information, delivery logistics, payment status,
+    and total calculated costs.
+    """
     STATUS_CHOICES = [
         ('new', 'Новый'),
         ('accepted', 'Принят'),
@@ -53,8 +57,16 @@ class Order(models.Model):
         verbose_name_plural = 'Заказы'
         ordering = ['-created_at']
 
+    def __str__(self):
+        return f"Order #{self.order_number} by {self.full_name}"
+
 
 class OrderItem(models.Model):
+    """
+    A specific product line within an order.
+    Captures the 'historical' price at the moment of purchase to ensure
+    financial records remain accurate even if catalog prices change.
+    """
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items', verbose_name='Заказ')
     product = models.ForeignKey(Product, on_delete=models.PROTECT, verbose_name='Товар')
     quantity = models.PositiveIntegerField(verbose_name='Количество')
@@ -64,8 +76,17 @@ class OrderItem(models.Model):
         verbose_name = 'Позиция заказа'
         verbose_name_plural = 'Позиции заказа'
 
+    @property
+    def total_price(self):
+        """Calculates the subtotal for this specific line item."""
+        return self.price * self.quantity
+
 
 class DeliverySettings(models.Model):
+    """
+    Global configuration for delivery logic.
+    Implements a Singleton pattern to ensure only one set of rules exists.
+    """
     free_delivery_threshold = models.DecimalField(
         max_digits=10, decimal_places=2, default=2000.00,
         verbose_name='Порог бесплатной доставки (руб)',
@@ -84,19 +105,16 @@ class DeliverySettings(models.Model):
         help_text='Дополнительная плата за срочную доставку'
     )
 
-    class Meta:
-        verbose_name = 'Настройки доставки'
-        verbose_name_plural = 'Настройки доставки'
-
     def save(self, *args, **kwargs):
+        """Overrides save to enforce a single database record (ID=1)."""
         self.pk = 1
         super().save(*args, **kwargs)
 
-    def __str__(self):
-        return "Настройки доставки"
-
     @classmethod
     def load(cls):
-        """Получить настройки (создать если нет)"""
+        """
+        Static method to retrieve the existing configuration or create
+        one with defaults if none exists.
+        """
         obj, created = cls.objects.get_or_create(pk=1)
         return obj
