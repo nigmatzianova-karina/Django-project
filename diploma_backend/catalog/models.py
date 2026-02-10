@@ -16,6 +16,9 @@ class Category(models.Model):
     deleted_at = models.DateTimeField(null=True, blank=True)
     is_featured = models.IntegerField(default=0, help_text="Ranking for featured display on home page")
 
+    def __str__(self):
+        return self.title
+
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
@@ -27,6 +30,9 @@ class Tag(models.Model):
     Simple label for product categorization and filtering.
     """
     name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
 
     class Meta:
         verbose_name = 'Тег'
@@ -76,6 +82,9 @@ class Product(models.Model):
             self.rating = 0.00
         self.save(update_fields=["rating"])
         return self.rating
+
+    def __str__(self):
+        return self.title
 
     class Meta:
         verbose_name = 'Товар'

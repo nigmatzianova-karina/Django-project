@@ -63,8 +63,6 @@ def orders_by_id_view(request, id):
     GET: Returns full order details including nested products.
     POST: Finalizes order details (address, delivery) and applies delivery costs.
     """
-    delivery_cfg = DeliverySettings.load()
-
     try:
         if request.user.is_authenticated:
             order = Order.objects.get(user=request.user, id=id)

@@ -70,7 +70,7 @@ def basket_view(request):
 
         except CartItem.DoesNotExist:
             return Response({"error": "Item not found in cart"}, status=404)
-
+        cart.refresh_from_db()
         return Response(CartSerializer(cart).data)
 
     return Response(status=400)

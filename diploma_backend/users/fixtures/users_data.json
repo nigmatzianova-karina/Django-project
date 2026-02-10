@@ -1,0 +1,24 @@
+[
+  {
+    "model": "users.profile",
+    "pk": 1,
+    "fields": {
+      "password": "pbkdf2_sha256$600000$P9Xp8S5vU8Jz$S9/N/X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3=",
+      "username": "admin",
+      "is_superuser": true,
+      "is_staff": true,
+      "is_active": true,
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "model": "users.profile",
+    "pk": 2,
+    "fields": {
+      "password": "pbkdf2_sha256$600000$P9Xp8S5vU8Jz$S9/N/X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3=",
+      "username": "buyer",
+      "is_active": true,
+      "email": "buyer@example.com"
+    }
+  }
+]
