@@ -6,27 +6,48 @@ from orders.models import Order, OrderItem, DeliverySettings
 
 
 class OrderItemInline(admin.TabularInline):
+    """
+    Displays individual products associated with an Order.
+    Product details are read-only to preserve historical transaction data.
+    """
     model = OrderItem
     extra = 0
-    fields = ["product_link", "quantity", "price", "total_price"]
-    readonly_fields = ["product_link", "quantity", "price", "total_price"]
+    fields = ["product_link", "quantity", "price", "total_price_display"]
+    readonly_fields = ["product_link", "quantity", "price", "total_price_display"]
 
     def product_link(self, obj):
+        """Generates a clickable link to the product in the catalog."""
         if obj.product:
             url = reverse('admin:catalog_product_change', args=[obj.product.id])
-            return format_html('<a href="{}">{}</a>', url, obj.product.name)
-        return "-"
-    product_link.short_description = "Товар"
+            return format_html('<a href="{}">{}</a>', url, obj.product.title)  # Fixed: .title instead of .name
+        return "N/A"
 
-    def total_price(self, obj):
+    product_link.short_description = "Product"
+
+    def total_price_display(self, obj):
+        """Calculates subtotal for this item line."""
         return f"{obj.price * obj.quantity} $"
-    total_price.short_description = "Сумма"
+
+    total_price_display.short_description = "Subtotal"
 
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ["id", "order_number", "status", "address", "phone", "total_cost"]
-    list_filter = ["status", "delivery_type", "payment_type", "payment_status", "created_at"]
-    search_fields = ["order_number", "full_name", "phone", "address", "status"]
+    """
+    Administrative interface for Order processing.
+    Provides filtering by status and payment type, and tracks delivery logistics.
+    """
+    list_display = ["id", "user", "delivery_type", "total_cost", "created_at"]
+    list_filter = ["status", "delivery_type", "payment_type", "created_at"]
+    search_fields = ["id", "full_name", "phone", "user__username"]
     ordering = ["-created_at"]
     inlines = [OrderItemInline]
+    list_select_related = ["user"]
+
+
+@admin.register(DeliverySettings)
+class DeliverySettingsAdmin(admin.ModelAdmin):
+    """
+    Configuration for delivery prices and thresholds.
+    """
+    list_display = ["standard_delivery_cost", "express_delivery_surcharge", "free_delivery_threshold"]

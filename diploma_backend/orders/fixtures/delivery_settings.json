@@ -1,0 +1,11 @@
+[
+  {
+    "model": "orders.deliverysettings",
+    "pk": 1,
+    "fields": {
+      "free_delivery_threshold": "2000.00",
+      "standard_delivery_cost": "200.00",
+      "express_delivery_surcharge": "500.00"
+    }
+  }
+]

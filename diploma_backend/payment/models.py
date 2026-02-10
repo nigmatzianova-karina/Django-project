@@ -1,3 +1,5 @@
+import random
+
 from django.db import models
 from django.db.models import CASCADE
 
@@ -5,6 +7,13 @@ from orders.models import Order
 
 
 class Payment(models.Model):
+    """
+    Stores payment transaction details and validates them against business rules.
+
+    Business Logic:
+    - Payment is successful if the card number is even and does not end in 0.
+    - Otherwise, a random bank error is generated.
+    """
     STATUS_CHOICES = [
         ('pending', 'Ожидает оплаты'),
         ('processing', 'В обработке'),
@@ -21,7 +30,7 @@ class Payment(models.Model):
     order = models.ForeignKey(Order, on_delete=CASCADE, related_name="payment", verbose_name="Заказ")
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, verbose_name="Способ оплаты")
 
-    card_number = models.CharField(max_length=8, verbose_name="Номер карты/счета")
+    card_number = models.CharField(max_length=16, verbose_name="Номер карты/счета")
     card_name = models.CharField(max_length=255, verbose_name="Имя на карте")
     card_month = models.CharField(max_length=2, verbose_name="Месяц окончания")
     card_year = models.CharField(max_length=4, verbose_name="Год окончания")
@@ -44,31 +53,45 @@ class Payment(models.Model):
         return f"Платеж #{self.id} для заказа {self.order.order_number}"
 
     def process_payment(self):
-        """Обработка платежа по логике ТЗ"""
+        """
+        Executes the payment validation logic.
+        Updates the payment status and records error messages if the transaction fails.
+        Returns:
+            bool: True if payment was successful, False otherwise.
+        """
         clean_number = ''.join(filter(str.isdigit, self.card_number))
 
-        last_digit = int(clean_number[-1]) if clean_number else 0
-        is_even = int(clean_number) % 2 == 0 if clean_number else False
+        try:
+            num_val = int(clean_number)
+            last_digit = num_val % 10
+            is_even = num_val % 2 == 0
 
-        if is_even and last_digit != 0:
+            success = is_even and last_digit != 0
+        except ValueError:
+            success = False
+
+        if success:
             self.status = 'completed'
-            self.error_message = ''
+            self.error_message = ""
+            self.order.status = "accepted"
+            self.order.save()
         else:
             self.status = 'failed'
-            import random
-            errors = [
+            self.error_message = random.choice([
                 "Недостаточно средств",
                 "Карта отклонена банком",
                 "Срок действия карты истек",
                 "Неверный CVV код",
                 "Превышен лимит операций"
-            ]
-            self.error_message = random.choice(errors)
+            ])
 
         self.save()
-        return self.status == 'completed'
+        return success
 
     def generate_random_account(self):
-        """Генерация случайного счета по ТЗ"""
+        """
+        Utility method to generate a 8-digit account number according to the requirements.
+        The resulting number always ends with an even digit to satisfy success conditions.
+        """
         import random
         return str(random.randint(1000000, 9999999)) + str(random.choice([2, 4, 6, 8]))
