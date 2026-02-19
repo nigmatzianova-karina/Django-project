@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 
 
 class Profile(AbstractUser):
@@ -26,3 +28,22 @@ class Profile(AbstractUser):
         self.deleted_at = django.utils.timezone.now()
         self.is_active = False
         self.save()
+
+
+@receiver(pre_save, sender=Profile)
+def delete_old_avatar_on_change(sender, instance, **kwargs):
+    """Deletes the old avatar file before saving the new one, unless this is the default."""
+    if not instance.pk:
+        return False
+
+    try:
+        old_avatar = Profile.objects.get(pk=instance.pk).avatar
+    except Profile.DoesNotExist:
+        return False
+
+    new_avatar = instance.avatar
+
+    if old_avatar and old_avatar != new_avatar:
+        if 'default-avatar.jpg' not in old_avatar.name:
+            if old_avatar.storage.exists(old_avatar.name):
+                old_avatar.storage.delete(old_avatar.name)
