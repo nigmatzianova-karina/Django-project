@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model, update_session_auth_hash, authen
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from cart.utils import merge_cart_after_login
 
 from users.serializers import ProfileSerializer, ChangePasswordSerializer
 
@@ -46,9 +47,6 @@ def profile_avatar_view(request):
         )
 
     user = request.user
-    if user.avatar:
-        user.avatar.delete(save=False)
-
     user.avatar = request.FILES["avatar"]
     user.save()
     return Response(status=200)
@@ -99,6 +97,7 @@ def sign_in_view(request):
 
     if user is not None:
         login(request, user)
+        merge_cart_after_login(request, user)
         return Response({"status": "success"}, status=200)
 
     return Response({"error": "Invalid credentials"}, status=401)
@@ -136,6 +135,7 @@ def sign_up_view(request):
             first_name=name
         )
         login(request, user)
+        merge_cart_after_login(request, user)
         return Response({"status": "success"}, 200)
     except Exception as e:
         return Response({"error": str(e)}, 500)

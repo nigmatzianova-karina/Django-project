@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.conf import settings
 from django.db import models
 from django.db.models import Sum, F
@@ -87,3 +88,52 @@ class CartItem(models.Model):
         super().save(*args, **kwargs)
         if self.cart:
             self.cart.save(update_fields=['updated_at'])
+
+
+class SessionCart:
+    """
+    A lightweight shopping cart manager for unauthorized users that stores data in request.session.
+    """
+    def __init__(self, request):
+        self.session = request.session
+        cart = self.session.get('cart')
+        if not cart:
+            cart = self.session['cart'] = {}
+        self.cart = cart
+
+    def add(self, product_id, quantity):
+        p_id = str(product_id)
+        if p_id not in self.cart:
+            self.cart[p_id] = {
+                'quantity': 0,
+                'added_at': datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z')
+            }
+        self.cart[p_id]['quantity'] += quantity
+        self.save()
+
+    def remove(self, product_id, quantity):
+        p_id = str(product_id)
+        if p_id in self.cart:
+            self.cart[p_id]['quantity'] -= quantity
+            if self.cart[p_id]['quantity'] <= 0:
+                del self.cart[p_id]
+            self.save()
+
+    def save(self):
+        self.session.modified = True
+
+    @property
+    def items_data(self):
+        product_ids = self.cart.keys()
+        products = Product.objects.filter(id__in=product_ids).select_related('category').prefetch_related('images',
+                                                                                                          'tags')
+
+        results = []
+        for product in products:
+            item_info = self.cart[str(product.id)]
+            results.append(type('Struct', (object,), {
+                'product': product,
+                'quantity': item_info['quantity'],
+                'added_at': item_info['added_at']
+            }))
+        return results
