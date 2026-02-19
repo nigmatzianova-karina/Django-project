@@ -122,8 +122,8 @@ class SaleItemSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='product.id')
     price = serializers.DecimalField(source='product.price', max_digits=10, decimal_places=2)
     salePrice = serializers.DecimalField(source='sale_price', max_digits=10, decimal_places=2)
-    dateFrom = serializers.CharField()
-    dateTo = serializers.CharField()
+    dateFrom = serializers.CharField(source='date_from')
+    dateTo = serializers.CharField(source='date_to')
     title = serializers.CharField(source='product.title')
     images = ImageSerializer(source='product.images', many=True, read_only=True)
 
