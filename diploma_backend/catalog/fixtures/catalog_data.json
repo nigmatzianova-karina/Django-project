@@ -1,0 +1,125 @@
+[
+  {
+    "model": "catalog.category",
+    "pk": 1,
+    "fields": {
+      "title": "Электроника",
+      "is_active": true,
+      "is_featured": 1,
+      "parent": null
+    }
+  },
+  {
+    "model": "catalog.category",
+    "pk": 2,
+    "fields": {
+      "title": "Смартфоны",
+      "is_active": true,
+      "is_featured": 0,
+      "parent": 1
+    }
+  },
+  {
+    "model": "catalog.category",
+    "pk": 3,
+    "fields": {
+      "title": "Бытовая техника",
+      "is_active": true,
+      "is_featured": 1,
+      "parent": null
+    }
+  },
+  {
+    "model": "catalog.tag",
+    "pk": 1,
+    "fields": { "name": "Новинка" }
+  },
+  {
+    "model": "catalog.tag",
+    "pk": 2,
+    "fields": { "name": "Популярное" }
+  },
+  {
+    "model": "catalog.tag",
+    "pk": 3,
+    "fields": { "name": "Акция" }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 1,
+    "fields": {
+      "title": "iPhone 15 Pro",
+      "description": "Флагманский смартфон с титановым корпусом.",
+      "full_description": "Подробное описание iPhone 15 Pro с мощным процессором A17 Pro и обновленной камерой.",
+      "price": "120000.00",
+      "count": 15,
+      "category": 2,
+      "is_active": true,
+      "free_delivery": true,
+      "limited_edition": true,
+      "sort_index": 1,
+      "tags": [1, 2]
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 2,
+    "fields": {
+      "title": "Электрический чайник",
+      "description": "Быстрый нагрев и стильный дизайн.",
+      "full_description": "Чайник из нержавеющей стали с объемом 1.7 литра и функцией поддержания температуры.",
+      "price": "1500.00",
+      "count": 50,
+      "category": 3,
+      "is_active": true,
+      "free_delivery": false,
+      "limited_edition": false,
+      "sort_index": 10,
+      "tags": [3]
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 3,
+    "fields": {
+      "title": "Беспроводные наушники",
+      "description": "Чистый звук и долгое время работы.",
+      "full_description": "Наушники с активным шумоподавлением и защитой от влаги IPX4.",
+      "price": "5000.00",
+      "count": 25,
+      "category": 1,
+      "is_active": true,
+      "free_delivery": true,
+      "limited_edition": false,
+      "sort_index": 5,
+      "tags": [2]
+    }
+  },
+  {
+    "model": "catalog.specification",
+    "pk": 1,
+    "fields": {
+      "product": 1,
+      "name": "Процессор",
+      "value": "A17 Pro"
+    }
+  },
+  {
+    "model": "catalog.specification",
+    "pk": 2,
+    "fields": {
+      "product": 1,
+      "name": "Материал",
+      "value": "Титан"
+    }
+  },
+  {
+    "model": "catalog.specification",
+    "pk": 3,
+    "fields": {
+      "product": 2,
+      "name": "Объем",
+      "value": "1.7 л"
+    }
+  }
+]
